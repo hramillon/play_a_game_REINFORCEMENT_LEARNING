@@ -7,6 +7,12 @@ import intertools
 import yaml
 import random
 from torch import nn
+import os
+import matplotlib as plt
+
+RUNS_DIR = "runs"
+os.makedirs(RUNS_DIR,exist_ok=True)
+matplotlib.use('Agg')
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
@@ -16,6 +22,10 @@ class Agent:
             all_hyperparameter_sets=yaml.safe_load(file)
             hyperparameters = all_hyperparameter_sets[hyperparameter_set]
 
+        self.hyperparameter_set =hyperparameter_set
+
+        self.env_id             = hyperparameters['env_id']
+        self.network_sync_rate  = hyperparameters['network_sync_rate']
         self.replay_memory_size = hyperparameters['replay_memory_size']
         self.mini_batch_size    = hyperparameters['mini_batch_size']
         self.epsilon_init       = hyperparameters['epsilon_init']
@@ -23,9 +33,16 @@ class Agent:
         self.epsilon_min        = hyperparameters['epsilon_min']
         self.learning_rate_a    = hyperparameters['learning_rate_a']
         self.discount_factor_g    = hyperparameters['discount_factor_g']
+        self.stop_on_reward     = hyperparameters['stop_on_reward']
+        self.fcl_nodes          = hyperparameters['fcl_nodes']
+        self.env_make_params    = hyperparameters.get('env_make_params',{})
  
         self.loss_fn = nn.MSELoss()
         self.optimizer = None
+
+        self.LOG_FILE = os.path.join(RUNS_DIR, f'{self.hyperparameter_set}.log')
+        self.MODEL_FILE = os.path.join(RUNS_DIR, f'{self.hyperparameter_set}.pt')
+        self.GRAPH_FILE = os.path.join(RUNS_DIR, f'{self.hyperparameter_set}.png')
     
     def run(self, is_training=True, render=False):
         env = gymnasium.make("CartPole-v1", render_mode="human" if render else None)
@@ -45,22 +62,28 @@ class Agent:
             target_dqn = DQN(num_states,num_actions).to(device)
             target_dqn.load_state_dict(policy_dqn.state_dict())
             step_count = 0
+            best_reward = -99999999
 
             self.optimizer = torch.optim.Adam(policy_dqn.parameters(), lr=self.learning_rate_a)
+        else :
+            policy_dqn.load_state_dict(torch.load(self.MODEL_FILE))
+            policy_dqn.eval()
 
         for episode in intertools.count():
             state, _ = env.reset()
             state = torch.tensor(state, dtype=torch.float, device=device)
             terminated=False
+            episode_reward = 0.0
 
-            while not terminated:
+            while (not terminated and episode_reward < self.stop_on_reward):
 
                 if is_training and random.random() < epsilon :
                     action = env.action_space.sample()
                     action = torch.tensor(action, dtype=torch.int64, device=device)
                 else :
+                    with torch.no_grad():
                     # 1 dimension => 2D
-                    action = policy_dqn(state.unsqueeze(dim=0)).squeeze().argmax()
+                        action = policy_dqn(state.unsqueeze(dim=0)).squeeze().argmax()
 
 
                 # Processing:
@@ -77,6 +100,15 @@ class Agent:
 
                 state=new_state
             rewards_per_episode.append(episode_reward)
+
+            if is_training:
+                if episode_reward > best_reward:
+                    log_message = f"New best reward {episode_reward:0.1f}({(episode_reward.best)})"
+                    print(log_message)
+                    with open(self.LOG_FILE, 'a') as file:
+                        file.write(log_message + '\n')
+                    torch.save(policy_dqn.state_dict(), self.MODEL_FILE)
+                    best_reward =episode_reward
 
             epsilon = max(epsilon*self.epsilon_decay,self.epsilon_min)
             epsilon_history.append(epsilon)
@@ -107,6 +139,35 @@ class Agent:
         self.optimizer.zero_grad()
         loss.backward
         self.optimizer.step()
+
+
+    def save_graph(self, rewards_per_episode, epsilon_history):
+        fig = plt.figure(1)
+        mean_rewards = np.zeros(len(rewards_per_episode))
+        for x in range(len(mean_rewards)):
+            mean_rewards[x] = np.mean(rewards_per_episode[max(0,x-99):(x+1)])
+        plt.subplot(121)
+        plt.ylabel('Mean Rewards')
+        plt.plot(mean_rewards)
+
+        plt.subplot(122)
+        plt.ylabel("Epsilon Decay")
+        plt.plot(epsilon_history)
+
+        plt.subplots_adjust(wspace=1.0, hspace=1.0)
+
+        fig.savefig(self.GRAPH_FILE)
+        plt.close(fig)
+
 if __name__ == "__main__" :
-    agent = Agent("cartpole1")
-    agent.run(is_training=True, render=True)
+    parser = argparse.ArgumentParser(description = 'train our test model')
+    parser.add_argument('hyperparameters', help='')
+    parser.add_argument('--train ', help='Training mode', action='store_true')
+    args = parser.parse_args()
+
+    dql=Agent(hyperparameter_set=args.hyperparameters)
+    
+    if args.train:
+        dql.run(is_training=True)
+    else:
+        dql.run(is_training=False, render=True)

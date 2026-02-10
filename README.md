@@ -12,3 +12,5 @@ To do it :
     -  Deep-Q-Networks
     -  Markov Decision Processes
 - Our Project
+    - Cart Pole V1 as a test
+    - Lets implement it for Flappy Bird !
