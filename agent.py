@@ -78,7 +78,10 @@ class Agent:
             target_dqn = None
 
         # Ajoute une limite au nombre d'épisodes
+        stop_training = False
         for episode in range(self.max_episodes):
+            if stop_training:
+                break
             state, _ = env.reset()
             state = torch.tensor(state, dtype=torch.float, device=device)
             terminated=False
@@ -136,6 +139,9 @@ class Agent:
                 # Mode test : affiche les résultats
                 if (episode + 1) % 10 == 0:
                     print(f"Episode {episode + 1}/{self.max_episodes}, Reward: {episode_reward:.1f}")
+            if episode_reward >= self.stop_on_reward:
+                print(f"\n Critère d'arrêt atteint! Reward: {episode_reward:.1f} >= {self.stop_on_reward}")
+                stop_training = True
 
         # Sauvegarde le graphique à la fin
         if is_training:
