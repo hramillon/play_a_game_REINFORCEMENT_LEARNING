@@ -222,4 +222,142 @@ These modifications transformed DQN into a practical algorithm capable of learni
 ## Our project
 
 ### A start with CartPole V1
+#### Implementation
 
+To validate our understanding of DQN, we implement a complete agent with experience replay to solve the CartPole environment. In this section, we discuss the architecture, hyperparameters, and results of our implementation.
+
+#### Agent
+
+##### Initialization
+
+The agent is initialized with hyperparameters loaded from a configuration file (hyperparameters.yml). These include:
+- Network architecture parameters (hidden dimensions, learning rate)
+- Training parameters (learning rate, discount factor $\gamma$, epsilon decay)
+- Experience replay parameters (buffer size, mini-batch size)
+- Synchronization rate for the target network
+
+We also initialize data structures to track:
+- Training metrics (loss, rewards per episode)
+- Analysis and visualization tools for monitoring performance
+
+The loss function is set to Mean Squared Error (MSE), and we use the Adam optimizer for gradient updates.
+
+##### Run Function
+
+The main training loop follows this structure:
+
+1. **Initialize environment**: We set up a Gymnasium environment for CartPole and track episode rewards.
+
+2. **Training setup**: If in training mode:
+   - Initialize the experience replay buffer
+   - Set the initial $\epsilon$ value for epsilon-greedy exploration
+   - Prepare the policy and target networks
+
+3. **Episode loop**: For each episode:
+   - Reset the environment and play until termination or max steps
+   - At each step:
+     - Select an action using epsilon-greedy: with probability $\epsilon$, choose randomly; otherwise, use the DQN to select the greedy action
+     - Execute the action and observe the new state and reward
+     - Store the transition $(s, a, r, s')$ in the experience replay buffer
+   
+4. **Model update**: After collecting a mini-batch of experiences:
+   - Call the optimization function to update the policy network
+   - Periodically synchronize the target network
+   - Decay $\epsilon$ to reduce exploration over time
+
+5. **Logging and visualization**: Track rewards and loss at the end of each episode
+
+##### Optimization Function
+
+The optimization function performs one training step:
+
+1. Sample a random mini-batch from the experience replay buffer
+2. Compute the target Q-values using the Bellman equation
+3. Compute the loss (MSE) between the policy network predictions and targets
+4. Perform backpropagation and update the policy network weights using Adam optimizer
+
+##### Saving Results
+
+After training completes, we generate and save:
+- Training loss curves
+- Episode reward history
+- These visualizations help analyze convergence and identify training issues
+
+#### DQN Architecture
+
+The Deep Q-Network is a feedforward neural network that approximates Q-values.
+
+##### Initialization
+
+The network requires:
+- **Input dimension** (state_dim): The size of the state observation (e.g., 4 for CartPole: position, velocity, angle, angular velocity)
+- **Output dimension** (action_dim): The number of possible actions (e.g., 2 for CartPole: left or right)
+- **Hidden dimension** (hidden_dim): A hyperparameter controlling network capacity (e.g., 128, 256)
+
+##### Architecture
+
+The network consists of:
+- Input layer: fully connected, takes state observations
+- Hidden layer(s): fully connected with **ReLU activation** function, providing non-linearity
+- Output layer: fully connected, outputs Q-values for each action
+
+The ReLU activation function is defined as:
+$$f(x) = \max(0, x)$$
+
+This introduces non-linearity while being computationally efficient.
+
+##### Forward Pass
+
+During the forward pass, input states are propagated through the network:
+1. State enters the first hidden layer
+2. ReLU activation is applied
+3. Output layer produces Q-values for all actions
+4. The Q-value corresponding to the taken action is used for loss computation
+
+#### Experience Replay Buffer
+
+The experience replay buffer is a fixed-size circular queue that stores experiences.
+
+##### Functionality
+
+- **Storage**: New experiences (transitions) are appended to the buffer. When full, old experiences are overwritten.
+- **Sampling**: A random sample of experiences is retrieved from the buffer, breaking correlations between consecutive samples.
+- **Size**
+
+#### Hyperparameters and Results
+
+##### First Attempt: Initial Configuration
+
+We began with a discount factor of $\gamma = 0.99$ to give substantial weight to future rewards accumulated throughout an episode. The epsilon-greedy strategy was configured with:
+- epsilon_decay: 0.995: Decay the exploration parameter after each episode
+- epsilon_min: 0.01: Maintain a minimum of 1% random action selection to prevent convergence to suboptimal policies
+- Total training episodes: 5,000
+
+**Results:**
+
+![CartPole Training Curve - Attempt 1](ressources/cartpole1.png)
+
+![Reward History - Attempt 1](ressources/rewardCartpol.png)
+
+The agent achieved several successful episodes with rewards approaching 500, with an average batch reward of around 200. However, performance was unstable and periodically collapsed to rewards as low as 100. This instability suggests that the exploration-exploitation balance was not optimal.
+
+##### Second Attempt: Improved Configuration
+
+To address these issues, we adjusted the hyperparameters:
+- epsilon_decay: 0.9995: Slower decay rate, allowing longer exploration phases
+- epsilon_min: 0.05: Increased minimum exploration to 5% to maintain behavioral diversity
+- Extended training to discover more robust solutions
+
+**Results:**
+
+![CartPole Training Curve - Attempt 2](ressources/cartpole2.png)
+
+![Reward History - Attempt 2](ressources/cartpole2rewards.png)
+
+The second configuration demonstrated significantly better performance. The slower epsilon decay allowed the agent more time to explore the state space and learn diverse strategies. Maintaining higher minimum exploration (5%) prevented the policy from becoming too greedy too early. The results show:
+- High rewards
+- Fewer catastrophic failures after convergence
+
+### Lets train our model for Flappy bird
+
+#### normal DQN deceiving results
