@@ -37,7 +37,7 @@ In this repository, we focus on neural networks because they represent the inter
 
 Consider a robot with the ability to rotate. If the robot has a probability $p$ of turning right and a rotation angle ranging from $-r$ to $r$, we have two parameters: $p$ and $r$. The goal is to find the optimal policy and parameter values that maximize overall performance.
 
-To maximize rewards, we can use **gradient ascent**, a method also known as **policy gradient**. This technique iteratively adjusts the policy parameters in the direction that increases expected reward.
+To maximize rewards, we can use gradient ascent, a method also known as policy gradient. This technique iteratively adjusts the policy parameters in the direction that increases expected reward.
 
 #### Policy with Neural Networks
 
@@ -115,7 +115,9 @@ Bellman discovered a way to estimate the optimal state value for every state, de
 
 When the agent acts optimally, the Bellman Optimality Equation applies:
 
-$$V^{*}(s) = \max_{a} \sum_{s'} T(s,a,s')[R(s,a,s') + \gamma \cdot V^{*}(s')]$$
+$$
+V^{*}(s) = \max_{a} \sum_{s'} T(s,a,s')[R(s,a,s') + \gamma \cdot V^{*}(s')]
+$$
 
 Where:
 - $T(s,a,s')$ is the probability of transitioning from state $s$ to state $s'$ when taking action $a$
@@ -136,11 +138,15 @@ While knowing the optimal state values is useful, we also need the optimal actio
 
 The Q-value iteration is:
 
-$$Q_{k+1}(s,a) = \sum_{s'} T(s,a,s')[R(s,a,s') + \gamma \cdot \max_{a'} Q_{k}(s',a')]$$
+$$
+Q_{k+1}(s,a) = \sum_{s'} T(s,a,s')[R(s,a,s') + \gamma \cdot \max_{a'} Q_{k}(s',a')]
+$$
 
 Once we have the optimal Q-values, we can define the optimal policy as:
 
-$$\pi^{*}(s) = \text{argmax}_{a} Q^{*}(s,a)$$
+$$
+\pi^{*}(s) = \text{argmax}_{a} Q^{*}(s,a)
+$$
 
 This policy tells the agent which action to take in each state to maximize cumulative reward. By following this policy, the agent achieves optimal performance in the MDP.
 
@@ -360,4 +366,27 @@ The second configuration demonstrated significantly better performance. The slow
 
 ### Lets train our model for Flappy bird
 
-#### normal DQN deceiving results
+#### Normal DQN, Disappointing Results
+
+We applied the same DQN architecture used successfully for CartPole to the Flappy Bird environment, modifying only the hyperparameters. However, we significantly increased the network capacity by expanding the hidden layer dimensions, hoping to improve learning on this more complex task.
+
+**Results:**
+
+![Flappy Bird Training Curve - Attempt 1](ressources/flappybird1.png)
+
+The agent failed to learn meaningful behavior. The training curve shows no improvement over episodes, with rewards remaining consistently poor. The agent could not discover effective strategies for navigating the pipes.
+By observing the results, we can identify the core issue: the bird successfully passes the first pipe, but each subsequent pipe presents a new challenge. The agent lacks sufficient exploration to navigate beyond the first pipe because reaching it already consumes most of the training episodes. By the time the agent learns to pass the first pipe, the epsilon value has decayed close to zero, leaving almost no exploration capacity to discover strategies for subsequent pipes.
+
+#### Double DQN like DeepMind !
+
+## Bibliographie
+
+### Manuals
+
+- Géron, A. *Machine Learning avec Scikit-Learn*. Dunod.
+- Charniak, E. *Introduction au Deep Learning*. Dunod.
+- Géron, A. *Deep Learning avec TensorFlow*. Dunod.
+
+### Articles
+- (1) R.Williams (1992). *Simple Statistical Gradient-Following Algorithms for Connectionist Reinforcement Learning*, https://goo.gl/tUe4Sh
+- (2) R.Bellman (1957). *A markovian Decision Process*, https://googl/wZTVIN
