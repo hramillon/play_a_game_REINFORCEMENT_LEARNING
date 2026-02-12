@@ -379,6 +379,26 @@ By observing the results, we can identify the core issue: the bird successfully 
 
 #### Double DQN like DeepMind !
 
+To make a double DQN we use the idea presented in the paper of google Deep Mind, Deep Reinforcement Learning with Double Q-learning (3).
+The idea is that usually, normal DQN overestimate the values of actions because we pass throught a maximization step like we explained before.
+
+The idea of the article to take down the overestimation bias by decolerationg the selection of the best next action
+by using a second Neural network to estimate the best next action.
+
+the  DDQN divides the target calculation as follows :
+
+1. we keep estimating the best future actions thanks to our first neural network. we have $a^{*}$
+2. use the second network named target network to evaluate the Q-value of $a^{*}$. this is $Q_{\theta '}(s_{t+1},a^{*})$
+3. we combine those value to have our new target $y = r_t + \gamma Q_{\theta '}(s_{t+1},a^{*})$
+
+**Results:**
+
+![Flappy Bird Training Curve - Attempt 2](ressources/flappybird2.png)
+
+We don't let the AI to learn besides will try to do a dueling architecture system to imroveour results
+
+#### Dueling architecture
+
 ## Bibliographie
 
 ### Manuals
@@ -390,3 +410,4 @@ By observing the results, we can identify the core issue: the bird successfully 
 ### Articles
 - (1) R.Williams (1992). *Simple Statistical Gradient-Following Algorithms for Connectionist Reinforcement Learning*, https://goo.gl/tUe4Sh
 - (2) R.Bellman (1957). *A markovian Decision Process*, https://googl/wZTVIN
+- (3) Hado van.H and al. *Deep Reinforcement Learning with Double Q-learning* , https://arxiv.org/pdf/1509.06461
