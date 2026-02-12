@@ -25,5 +25,6 @@ flappybird1:
   fcl_nodes: 512
   discount_factor_g: 0.99
   max_episodes: 30000
+  enable_double_dqn: True
   env_make_params:
     use_lidar: False
