@@ -39,6 +39,7 @@ class Agent:
         self.stop_on_reward     = hyperparameters['stop_on_reward']
         self.fcl_nodes          = hyperparameters['fcl_nodes']
         self.max_episodes       = hyperparameters.get('max_episodes', 1000)
+        self.enable_double_dqn  = hyperparameters['enable_double_dqn']
         self.env_make_params    = hyperparameters.get('env_make_params',{})
  
         self.loss_fn = nn.MSELoss()
@@ -49,7 +50,7 @@ class Agent:
         self.GRAPH_FILE = os.path.join(RUNS_DIR, f'{self.hyperparameter_set}.png')
     
     def run(self, is_training=True, render=False):
-        # Utilise self.env_id au lieu de "CartPole-v1" en dur
+        # Utilise self.env_id au lieu de CartPole-v1
         env = gymnasium.make(self.env_id, render_mode="human" if render else None)
 
         num_actions = env.action_space.n
@@ -161,7 +162,13 @@ class Agent:
         terminations = torch.tensor(terminations).float().to(device)
         
         with torch.no_grad():
-            target_q = rewards + (1 - terminations) * self.discount_factor_g * target_dqn(new_states).max(dim=1)[0]
+            if self.enable_double_dqn:
+                best_actions_from_policy = policy_dqn(new_states).argmax(dim=1)
+
+                target_q = rewards + (1-terminations) * self.discount_factor_g * \
+                                target_dqn(new_states).gather(dim=1, index=best_actions_from_policy.unsqueeze(dim=1)).squeeze()
+            else:
+                target_q = rewards + (1-terminations) * self.discount_factor_g * target_dqn(new_states).max(dim=1)[0]
         
         # Calcule current_q une seule fois et correctement
         current_q = policy_dqn(states).gather(dim=1, index=actions.unsqueeze(dim=1)).squeeze()
