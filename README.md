@@ -116,7 +116,7 @@ Bellman discovered a way to estimate the optimal state value for every state, de
 When the agent acts optimally, the Bellman Optimality Equation applies:
 
 $$
-V^{*}(s) = \max_{a} \sum_{s'} T(s,a,s')[R(s,a,s') + \gamma \cdot V^{*}(s')]
+V^{\ast}(s) = \max_{a} \sum_{s'} T(s,a,s')[R(s,a,s') + \gamma \cdot V^{\ast}(s')]
 $$
 
 Where:
@@ -145,7 +145,7 @@ $$
 Once we have the optimal Q-values, we can define the optimal policy as:
 
 $$
-\pi^{*}(s) = \text{argmax}_{a} Q^{*}(s,a)
+\pi^{\ast}(s) = \text{argmax}_{a} Q^{*}(s,a)
 $$
 
 This policy tells the agent which action to take in each state to maximize cumulative reward. By following this policy, the agent achieves optimal performance in the MDP.
