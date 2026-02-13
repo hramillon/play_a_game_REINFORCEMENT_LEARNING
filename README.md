@@ -377,27 +377,40 @@ We applied the same DQN architecture used successfully for CartPole to the Flapp
 The agent failed to learn meaningful behavior. The training curve shows no improvement over episodes, with rewards remaining consistently poor. The agent could not discover effective strategies for navigating the pipes.
 By observing the results, we can identify the core issue: the bird successfully passes the first pipe, but each subsequent pipe presents a new challenge. The agent lacks sufficient exploration to navigate beyond the first pipe because reaching it already consumes most of the training episodes. By the time the agent learns to pass the first pipe, the epsilon value has decayed close to zero, leaving almost no exploration capacity to discover strategies for subsequent pipes.
 
-#### Double DQN like DeepMind !
+#### Double DQN like DeepMind
 
-To make a double DQN we use the idea presented in the paper of google Deep Mind, Deep Reinforcement Learning with Double Q-learning (3).
-The idea is that usually, normal DQN overestimate the values of actions because we pass throught a maximization step like we explained before.
+To implement Double DQN, we use the approach presented in DeepMind's paper: *Deep Reinforcement Learning with Double Q-learning* (3).
 
-The idea of the article to take down the overestimation bias by decolerationg the selection of the best next action
-by using a second Neural network to estimate the best next action.
+**The Problem with Standard DQN**
 
-the  DDQN divides the target calculation as follows :
+Standard DQN tends to overestimate action values because of the maximization step in the target calculation. Double DQN addresses this bias by decoupling the selection and evaluation of the best next action using a second neural network (the target network).
 
-1. we keep estimating the best future actions thanks to our first neural network. we have $a^{*}$
-2. use the second network named target network to evaluate the Q-value of $a^{*}$. this is $Q_{\theta '}(s_{t+1},a^{*})$
-3. we combine those value to have our new target $y = r_t + \gamma Q_{\theta '}(s_{t+1},a^{*})$
+**How Double DQN Works**
 
-**Results:**
+The target is calculated in three steps:
+
+1. Use the primary network to select the best future action: $a^{*} = \arg\max_a Q_\theta(s_{t+1}, a)$
+2. Use the target network to evaluate this action: $Q_{\theta'}(s_{t+1}, a^{*})$
+3. Compute the target: $y = r_t + \gamma Q_{\theta'}(s_{t+1}, a^{*})$
+
+**Results**
 
 ![Flappy Bird Training Curve - Attempt 2](ressources/flappybird2.png)
 
-We don't let the AI to learn besides will try to do a dueling architecture system to imroveour results
+The initial results were modest, so we decided to combine Double DQN with a Dueling architecture to improve performance.
 
-#### Dueling architecture
+#### Dueling Architecture
+
+We implemented Dueling architecture alongside Double DQN and trained the model for an extended period to achieve better convergence. For that we use the article of Google deep mind (4).
+
+We got pretty small results during the training part, it's due to the fact I let the agent having 5% of random action, however in Flappy birde 1 wrong action and the agent is dead. after 1hour of training we got this:
+
+![Flappy Bird Training Curve - Attempt 3](ressources/flappybird3.png)
+
+However during test the model was quite good and had goot results
+
+![Train set](ressources/screen.png)
+
 
 ## Bibliographie
 
@@ -411,3 +424,4 @@ We don't let the AI to learn besides will try to do a dueling architecture syste
 - (1) R.Williams (1992). *Simple Statistical Gradient-Following Algorithms for Connectionist Reinforcement Learning*, https://goo.gl/tUe4Sh
 - (2) R.Bellman (1957). *A markovian Decision Process*, https://googl/wZTVIN
 - (3) Hado van.H and al. *Deep Reinforcement Learning with Double Q-learning* , https://arxiv.org/pdf/1509.06461
+- (4) Ziyu.W and al, Google DeepMind (UK), (2016), *Dueling Network Architectures for Deep Reinforcement Learning*, arxiv.org/abs/1511.06581
